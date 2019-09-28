@@ -14,7 +14,7 @@ class TrackChoice extends React.Component {
         const token = localStorage.getItem('token');
         if (token === null) {
             this.socket.emit('generate-token');
-            this.socket.on('token-generated', token => {
+            this.socket.on('token-generated', tok => {
                 localStorage.setItem('token', tok);
                 this.socket.emit('vote', { index: this.props.index, tok });
             });
