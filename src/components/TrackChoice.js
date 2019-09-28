@@ -11,7 +11,16 @@ class TrackChoice extends React.Component {
 
     clicked() {
         console.log(this.props.track);
-        this.socket.emit('vote', this.props.index);
+        const token = localStorage.getItem('token');
+        if (token === null) {
+            this.socket.emit('generate-token');
+            this.socket.on('token-generated', token => {
+                localStorage.setItem('token', tok);
+                this.socket.emit('vote', { index: this.props.index, tok });
+            });
+        } else {
+            this.socket.emit('vote', { index: this.props.index, token });
+        }
     }
 
     render() {
