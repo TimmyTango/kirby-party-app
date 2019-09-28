@@ -9,7 +9,7 @@ export class App extends React.Component {
     render() {
         return (
             <div className="wrapper">
-                <SocketContext.Provider value={io('https://tango.tplinkdns.com:8080/')}>
+                <SocketContext.Provider value={io('https://partyapi.timmytango.com/')}>
                     <NowPlaying />
                     <TrackChoices />
                 </SocketContext.Provider>
