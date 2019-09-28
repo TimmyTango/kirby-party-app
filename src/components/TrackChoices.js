@@ -2,6 +2,7 @@ import React from 'react';
 
 import { SocketContext } from '../utils';
 import TrackChoice from './TrackChoice';
+import Track from './Track';
 import { displayTrack } from '../utils';
 
 class TrackChoices extends React.Component {
@@ -13,25 +14,35 @@ class TrackChoices extends React.Component {
 
     componentDidMount() {
         this.socket.emit('request-choices');
-        this.socket.on('update-choices', ({ canVote, tracks }) => {
-            this.setState({ choices: tracks, canVote });
+        this.socket.on('update-choices', ({ canVote, tracks, votes }) => {
+            this.setState({ choices: tracks, canVote, votes });
         });
-        this.socket.on('vote-cast', () => {
-            this.setState({ canVote: false });
+        this.socket.on('vote-cast', votes => {
+            this.setState({ canVote: false, votes });
         });
     }
 
     renderTracks() {
-        console.log('choices', this.state.choices);
         if (!this.state.choices) {
             return null;
         }
         const { choices } = this.state;
+
+        let totalVotes = 0;
+        if (this.state.votes) {
+            console.log(this.state.votes);
+            this.state.votes.map(votes => {
+                totalVotes += votes;
+            });
+            console.log(totalVotes);
+        }
         return choices.map((choice, index) => {
             if (this.state.canVote) {
                 return <TrackChoice key={index} index={index} track={choice} />;
             } else {
-                return <div key={index}>{displayTrack(choice)}</div>;
+                const percent = Math.floor((this.state.votes[index] / totalVotes) * 100);
+                console.log(percent);
+                return <Track key={index} percent={percent} track={choice} />;
             }
         });
     }

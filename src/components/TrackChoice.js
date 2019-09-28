@@ -12,9 +12,6 @@ class TrackChoice extends React.Component {
     clicked() {
         console.log(this.props.track);
         this.socket.emit('vote', this.props.index);
-        this.socket.on('vote-cast', () => {
-            console.log('voted for track');
-        });
     }
 
     render() {

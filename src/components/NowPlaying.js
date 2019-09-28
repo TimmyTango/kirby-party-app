@@ -18,7 +18,6 @@ class NowPlaying extends React.Component {
         this.socket.emit('request-state');
 
         this.socket.on('update-state', ({ currentTrack, elapsedTime }) => {
-            console.log(currentTrack);
             const timeLeft = currentTrack.duration - elapsedTime;
             this.setState({ currentTrack, timeLeft });
         });
