@@ -13,7 +13,12 @@ class TrackChoices extends React.Component {
     }
 
     componentDidMount() {
-        this.socket.emit('request-choices');
+        this.socket.emit('request-choices', localStorage.getItem('token'));
+        window.addEventListener('focus', event => {
+            if(localStorage.getItem('token')) {
+                this.socket.emit('request-choices', localStorage.getItem('token'));
+            }
+        });
         this.socket.on('update-choices', ({ canVote, tracks, votes }) => {
             this.setState({ choices: tracks, canVote, votes });
         });
