@@ -1,61 +1,62 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState, useContext } from 'react';
 
-import { SocketContext } from '../utils';
+import { SocketContext, getToken } from '../utils';
 import TrackChoice from './TrackChoice';
 import Track from './Track';
-import { displayTrack } from '../utils';
 
-class TrackChoices extends React.Component {
-    constructor(props, context) {
-        super(props, context);
-        this.state = {};
-        this.socket = this.context;
+export default function TrackChoices() {
+    const [choices, setChoices] = useState([]);
+    const [canVote, setCanVote] = useState(false);
+    const [votes, setVotes] = useState([]);
+    const socket = useContext(SocketContext);
+
+    const requestChoices = useCallback(() => {
+        socket.emit('request-choices', getToken());
+    }, [socket]);
+
+    const onUpdateChoices = useCallback(({ canVote, tracks, votes }) => {
+        setChoices(tracks);
+        setCanVote(canVote);
+        setVotes(votes);
+    }, []);
+
+    const onVoteCast = useCallback((votes) => {
+        setCanVote(false);
+        setVotes(votes);
+    }, []);
+
+    useEffect(() => {
+        socket.on('update-choices', onUpdateChoices);
+        socket.on('vote-cast', onVoteCast);
+
+        return () => {
+            socket.off('update-choices', onUpdateChoices);
+            socket.off('vote-cast', onVoteCast);
+        }
+    }, []);
+
+    useEffect(() => {
+        requestChoices();
+        window.addEventListener('focus', requestChoices);
+
+        return () => {
+            window.removeEventListener('focus', requestChoices);
+        }
+    }, [socket]);
+
+    if (!choices || choices.length === 0) return null;
+
+    let totalVotes = 0;
+    if (votes && votes.length > 0) {
+        totalVotes = votes.reduce((sum, value) => sum + value);
     }
 
-    componentDidMount() {
-        this.socket.emit('request-choices', localStorage.getItem('token'));
-        window.addEventListener('focus', event => {
-            if(localStorage.getItem('token')) {
-                this.socket.emit('request-choices', localStorage.getItem('token'));
-            }
-        });
-        this.socket.on('update-choices', ({ canVote, tracks, votes }) => {
-            this.setState({ choices: tracks, canVote, votes });
-        });
-        this.socket.on('vote-cast', votes => {
-            this.setState({ canVote: false, votes });
-        });
-    }
-
-    renderTracks() {
-        if (!this.state.choices) {
-            return null;
-        }
-        const { choices } = this.state;
-
-        let totalVotes = 0;
-        if (this.state.votes) {
-            console.log(this.state.votes);
-            this.state.votes.map(votes => {
-                totalVotes += votes;
-            });
-            console.log(totalVotes);
-        }
+    if (canVote) {
+        return choices.map((choice, index) => <TrackChoice key={index} index={index} track={choice} />);
+    } else {
         return choices.map((choice, index) => {
-            if (this.state.canVote) {
-                return <TrackChoice key={index} index={index} track={choice} />;
-            } else {
-                const percent = Math.floor((this.state.votes[index] / totalVotes) * 100);
-                console.log(percent);
-                return <Track key={index} percent={percent} track={choice} />;
-            }
+            const percent = Math.floor((votes[index] / totalVotes) * 100);
+            return <Track key={index} percent={percent} track={choice} />
         });
-    }
-
-    render() {
-        return <div>{this.renderTracks()}</div>;
     }
 }
-
-TrackChoices.contextType = SocketContext;
-export default TrackChoices;

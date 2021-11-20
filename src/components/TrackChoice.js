@@ -1,36 +1,28 @@
-import React from 'react';
+import React, { useCallback, useContext } from 'react';
 import { SocketContext } from '../utils';
 import { displayTrack } from '../utils';
 
-class TrackChoice extends React.Component {
-    constructor(props, context) {
-        super(props, context);
-        this.socket = this.context;
-        this.clicked = this.clicked.bind(this);
-    }
+export default function TrackChoice({track, index}) {
+    const socket = useContext(SocketContext);
 
-    clicked() {
-        console.log(this.props.track);
+    const onTokenGenerated = useCallback((newToken) => {
+        localStorage.setItem('token', newToken);
+        socket.emit('vote', { index, token: newToken });
+    }, [socket, index]);
+
+    const onVote = useCallback(() => {
         const token = localStorage.getItem('token');
         if (token === null) {
-            this.socket.emit('generate-token');
-            this.socket.on('token-generated', tok => {
-                localStorage.setItem('token', tok);
-                this.socket.emit('vote', { index: this.props.index, tok });
-            });
+            socket.emit('generate-token');
+            socket.on('token-generated', onTokenGenerated);
         } else {
-            this.socket.emit('vote', { index: this.props.index, token });
+            socket.emit('vote', { index, token });
         }
-    }
+    }, [socket, track, index]);
 
-    render() {
-        return (
-            <button className="vote" onClick={this.clicked}>
-                {displayTrack(this.props.track)}
-            </button>
-        );
-    }
+    return (
+        <button className="vote" onClick={onVote}>
+            { displayTrack(track) }
+        </button>
+    );
 }
-
-TrackChoice.contextType = SocketContext;
-export default TrackChoice;

@@ -20,9 +20,8 @@ export function displayTrack({ title, artist }) {
 
     return (
         <span>
-            {truncate(title, 30)}
-            <br />
-            {truncate(artist, 30)}
+            <div className="strong">{title}</div>
+            <div>{artist}</div>
         </span>
     );
 }
@@ -35,4 +34,8 @@ export function displayTime(seconds) {
         const remainder = seconds % 60;
         return `${minutes} minutes and ${remainder} seconds`;
     }
+}
+
+export function getToken() {
+    return localStorage.getItem('token');
 }

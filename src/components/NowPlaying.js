@@ -1,53 +1,36 @@
-import React from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 
-import { SocketContext } from '../utils';
-import { displayTrack, displayTime } from '../utils';
+import { SocketContext, displayTrack, displayTime } from '../utils';
 
-class NowPlaying extends React.Component {
-    constructor(props, context) {
-        super(props, context);
+export default function NowPlaying() {
+    const [currentTrack, setCurrentTrack] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const socket = useContext(SocketContext);
 
-        this.state = {
-            timeLeft: 0
-        };
+    const updateState = useCallback(({ currentTrack, elapsedTime }) => {
+        setTimeLeft(currentTrack.duration - elapsedTime);
+        setCurrentTrack(currentTrack); 
+    }, []);
 
-        this.socket = this.context;
-    }
+    useEffect(() => {
+        socket.emit('request-state');
+        socket.on('update-state', updateState);
 
-    componentDidMount() {
-        this.socket.emit('request-state');
-
-        this.socket.on('update-state', ({ currentTrack, elapsedTime }) => {
-            const timeLeft = currentTrack.duration - elapsedTime;
-            this.setState({ currentTrack, timeLeft });
-        });
-    }
-
-    renderCurrentTrack() {
-        if (!this.state.currentTrack) {
-            return '...';
+        return () => {
+            socket.off('update-state', updateState);
         }
+    }, []);
 
-        return displayTrack(this.state.currentTrack);
-    }
-
-    render() {
-        return (
-            <div>
-                <p>
-                    <span className="strong">Current Track:</span>
-                    <br />
-                    {this.renderCurrentTrack()}
-                </p>
-                <p>
-                    <span className="strong">Time left:</span>
-                    <br />
-                    {displayTime(this.state.timeLeft)}
-                </p>
+    return (
+        <div>
+            <div style={{marginBottom: 10}}>
+                <div className="strong underline" style={{marginBottom: 5}}>Current Track</div>
+                { currentTrack ? displayTrack(currentTrack) : '...' }
             </div>
-        );
-    }
+            <div style={{marginBottom: 10}}>
+                <div className="strong underline" style={{marginBottom: 5}}>Time Left</div>
+                { displayTime(timeLeft) }
+            </div>
+        </div>
+    )
 }
-
-NowPlaying.contextType = SocketContext;
-export default NowPlaying;
